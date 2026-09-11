@@ -1,0 +1,38 @@
+node_modules/
+/.next/
+out/
+dist/
+build/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+supabase/.temp/
+uploads/
+tmp/
+cache/
+data/*.json
+!data/seed.catalog.json
+*.pem
+*.key
+tsconfig.tsbuildinfo
+!.env.example
+dealmap_private_do_not_share.md
+# personal local folders/notes - never publish
+/app share public/
+/app prv/
+/read me.txt
+/advice.txt
+/anything.txt
+/dealmap_start_here.md
+/dealmap_public_pack.md
+/dealmap_owner_setup.md

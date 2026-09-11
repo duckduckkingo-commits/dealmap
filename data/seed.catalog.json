@@ -1,0 +1,38 @@
+{
+  "_note": "DEVELOPMENT / DEMO DATA — clearly marked demo catalog. Never mix into production market statistics as verified data.",
+  "categories": [
+    { "id": "cat_smartphones", "slug": "smartphones", "name": "Smartphones" },
+    { "id": "cat_laptops", "slug": "laptops", "name": "Laptops" },
+    { "id": "cat_pc_parts", "slug": "pc-components", "name": "PC components" },
+    { "id": "cat_desktops", "slug": "desktops", "name": "Desktop PCs" },
+    { "id": "cat_tablets", "slug": "tablets", "name": "Tablets" },
+    { "id": "cat_watches", "slug": "smartwatches", "name": "Smartwatches" },
+    { "id": "cat_consoles", "slug": "gaming-consoles", "name": "Gaming consoles" },
+    { "id": "cat_tvs", "slug": "tvs", "name": "TVs" },
+    { "id": "cat_cameras", "slug": "cameras", "name": "Cameras" },
+    { "id": "cat_audio", "slug": "headphones", "name": "Headphones" },
+    { "id": "cat_other", "slug": "other", "name": "Other electronics" }
+  ],
+  "products": [
+    { "id": "p_iphone13_128", "brand": "Apple", "model": "iPhone 13", "name": "Apple iPhone 13 128GB", "category": "smartphones", "specs": { "Storage": "128GB", "RAM": "4GB", "Screen": "6.1\" OLED" }, "variants": ["128GB Black", "128GB Blue", "256GB Black"] },
+    { "id": "p_galaxy_a54", "brand": "Samsung", "model": "Galaxy A54", "name": "Samsung Galaxy A54 128GB", "category": "smartphones", "specs": { "Storage": "128GB", "RAM": "8GB", "Screen": "6.4\" AMOLED" }, "variants": ["128GB Black", "256GB Violet"] },
+    { "id": "p_redmi_note13", "brand": "Xiaomi", "model": "Redmi Note 13", "name": "Xiaomi Redmi Note 13 256GB", "category": "smartphones", "specs": { "Storage": "256GB", "RAM": "8GB" }, "variants": ["256GB Black"] },
+    { "id": "p_thinkpad_e14", "brand": "Lenovo", "model": "ThinkPad E14", "name": "Lenovo ThinkPad E14 Ryzen 5 16GB 512GB", "category": "laptops", "specs": { "CPU": "Ryzen 5 7530U", "RAM": "16GB", "SSD": "512GB" }, "variants": ["16GB/512GB"] },
+    { "id": "p_macbook_air_m2", "brand": "Apple", "model": "MacBook Air M2", "name": "Apple MacBook Air M2 8GB 256GB", "category": "laptops", "specs": { "Chip": "M2", "RAM": "8GB", "SSD": "256GB" }, "variants": ["8GB/256GB Midnight"] },
+    { "id": "p_ps5_slim", "brand": "Sony", "model": "PlayStation 5 Slim", "name": "Sony PlayStation 5 Slim Disc", "category": "gaming-consoles", "specs": { "Storage": "1TB", "Edition": "Disc" }, "variants": ["Disc 1TB"] },
+    { "id": "p_mi_tv_55", "brand": "Xiaomi", "model": "TV A 55", "name": "Xiaomi TV A 55\" 4K", "category": "tvs", "specs": { "Size": "55\"", "Panel": "4K UHD" }, "variants": ["55\" 4K"] },
+    { "id": "p_ipad9", "brand": "Apple", "model": "iPad 9", "name": "Apple iPad 9 64GB WiFi", "category": "tablets", "specs": { "Storage": "64GB", "Screen": "10.2\"" }, "variants": ["64GB WiFi"] },
+    { "id": "p_wh1000xm5", "brand": "Sony", "model": "WH-1000XM5", "name": "Sony WH-1000XM5", "category": "headphones", "specs": { "Type": "Over-ear ANC" }, "variants": ["Black", "Silver"] },
+    { "id": "p_rtx4060", "brand": "NVIDIA", "model": "RTX 4060", "name": "NVIDIA GeForce RTX 4060 8GB", "category": "pc-components", "specs": { "VRAM": "8GB" }, "variants": ["8GB Dual"] },
+    { "id": "p_watch_se2", "brand": "Apple", "model": "Watch SE 2", "name": "Apple Watch SE 2 40mm", "category": "smartwatches", "specs": { "Size": "40mm", "GPS": "Yes" }, "variants": ["40mm Midnight"] },
+    { "id": "p_canon_m50", "brand": "Canon", "model": "EOS M50 II", "name": "Canon EOS M50 Mark II + 15-45mm", "category": "cameras", "specs": { "Sensor": "APS-C 24MP" }, "variants": ["Kit 15-45mm"] }
+  ],
+  "observations": [
+    { "productId": "p_iphone13_128", "prices": [5490, 5650, 5790, 5890, 5990, 6100, 6250, 5400, 5950, 6050, 6300, 6450], "condition": "used_good", "location": "Casablanca" },
+    { "productId": "p_galaxy_a54", "prices": [3290, 3450, 3590, 3690, 3790, 3890, 3990, 3350, 3750], "condition": "new", "location": "Rabat" },
+    { "productId": "p_redmi_note13", "prices": [2190, 2290, 2390, 2490, 2590, 2350, 2450], "condition": "new", "location": "Casablanca" },
+    { "productId": "p_thinkpad_e14", "prices": [7200, 7500, 7900, 8200, 8500, 7350, 8000], "condition": "new", "location": "Casablanca" },
+    { "productId": "p_ps5_slim", "prices": [4990, 5190, 5390, 5490, 5590, 5290], "condition": "new", "location": "Marrakech" },
+    { "productId": "p_wh1000xm5", "prices": [2990, 3150, 3290, 3390, 3490], "condition": "new", "location": "Casablanca" }
+  ]
+}

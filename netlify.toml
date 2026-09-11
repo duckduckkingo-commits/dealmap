@@ -1,0 +1,12 @@
+# Netlify deploy config for DEALMAP (Next.js 14 App Router).
+# Netlify auto-detects Next.js and uses its Next.js Runtime — no plugin install needed.
+# IMPORTANT: set secrets ONLY in Netlify UI → Site settings → Environment variables.
+# Never commit real values to git.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--no-audit --no-fund"

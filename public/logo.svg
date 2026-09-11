@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="DEALMAP logo">
+  <defs>
+    <linearGradient id="dm-g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0EA2FF"/>
+      <stop offset="1" stop-color="#2E6BF0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#dm-g)"/>
+  <g transform="rotate(-18 32 32)">
+    <path d="M22 16h16a4 4 0 0 1 4 4v16a4 4 0 0 1-1.2 2.8l-8 8a2.8 2.8 0 0 1-4 0l-8-8A4 4 0 0 1 19.6 36V20a4 4 0 0 1 4-4z" fill="#fff"/>
+    <circle cx="35.5" cy="22.5" r="2.2" fill="url(#dm-g)"/>
+    <rect x="24" y="31" width="4" height="7" rx="1.4" fill="#2E6BF0"/>
+    <rect x="29.5" y="27" width="4" height="11" rx="1.4" fill="#0EA2FF"/>
+    <rect x="35" y="30" width="4" height="8" rx="1.4" fill="#1D4FD7"/>
+  </g>
+</svg>
