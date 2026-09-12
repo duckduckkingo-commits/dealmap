@@ -11,7 +11,7 @@ const RULES: Rule[] = [
   { kind: "scratches", label: "Scratches / marks", patterns: [/scratch(es|ed)?\b/i, /rayures?/i, /خدوش/i] },
   { kind: "camera_issue", label: "Camera problem", patterns: [/camera\s+(issue|problem|broken|not\s+work)/i, /caméra\s+(défectueuse|ne\s+marche)/i] },
   { kind: "technical_issue", label: "Technical problem", patterns: [/not\s+working/i, /doesn.?t\s+(turn\s+on|charge|boot)/i, /ne\s+(s.?allume|charge)\s+pas/i, /ne\s+fonctionne\s+pas/i, /problème\s+technique/i] },
-  { kind: "refurbished", label: "Refurbished condition", patterns: [/refurbished/i, /reconditionné/i, /rénové/i, /مجد.?د/i] },
+  { kind: "refurbished", label: "Refurbished condition", patterns: [/refurbished/i, /reconditionné/i, /rénové/i, /remis\s+à\s+neuf/i, /مجد.?د/i] },
   { kind: "no_warranty", label: "No warranty", patterns: [/no\s+warranty/i, /without\s+warranty/i, /sans\s+garantie/i, /بدون\s+ضمان/i] },
   { kind: "damaged_parts", label: "Damaged parts", patterns: [/damaged/i, /for\s+parts/i, /pour\s+pièces/i, /endommagé/i] },
 ];

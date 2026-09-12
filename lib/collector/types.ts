@@ -63,6 +63,8 @@ export interface CollectionRun {
   skipped: number;
   failedSources: string[];
   errors: string[];
+  /** Non-error notes, e.g. "Skipped: disallowed by robots.txt". */
+  notes: string[];
 }
 
 export interface UserSubmission {

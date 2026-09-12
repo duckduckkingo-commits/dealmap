@@ -29,6 +29,21 @@ wires (Header link, bottom-nav tab, nav grid columns, Home hero button).
   (8 tables) through zero-dependency PostgREST calls when
   `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` are set.
 
+## Real multi-store data (no fake prices, ToS-first)
+
+- **robots.txt compliance** (`lib/collector/robots.ts`): automated re-checks run
+  only where the site's robots rules allow; disallowed URLs are logged as
+  skipped, and unreachable hosts fail closed. Re-checking is OFF per store
+  until an admin enables it in `/admin/collector`.
+- **CSV import** (`/admin/collector` → Import): paste real price lists you have
+  the right to use (`storeName, url, price, currency, condition`). Invalid
+  lines are reported, never silently stored; imports land as pending offers.
+- **Single-URL fetch** (`/analyze` or admin): one user-directed fetch per
+  submitted link (like a link preview) — never mass crawling, no protection
+  bypass, polite bot user-agent, 8s timeout.
+- Unreachable sources (HTTP 403, bot walls) stay listed with reliability
+  Unknown and surface in run errors — never worked around.
+
 ## Setup
 
 1. Nothing to install — zero new dependencies.

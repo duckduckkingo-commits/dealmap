@@ -101,8 +101,7 @@ describe("collector: problems detector never invents", () => {
   });
 });
 
-describe("collector: new files exist, old files untouched", () => {
-  const fs = require("fs");
+describe("collector: new files exist, old files untouched", () => {  const fs = require("fs");
   const path = require("path");
   const ROOT = path.join(__dirname, "..");
   test("all new module files exist", () => {
@@ -118,6 +117,75 @@ describe("collector: new files exist, old files untouched", () => {
       "app/analyze/page.tsx", "app/admin/collector/page.tsx",
       "components/collector/AnalyzeForm.tsx", "components/collector/AnalysisResult.tsx",
       "components/collector/AdminCollector.tsx",
+      "lib/collector/robots.ts", "lib/collector/csv.ts",
+      "app/api/collector/import/route.ts",
     ]) assert.ok(fs.existsSync(path.join(ROOT, f)), f);
+  });
+});
+
+// --- Mirror of robots parsing from lib/collector/robots.ts ---
+function robotsAllowsPath(txt, path) {
+  const groups = [];
+  let cur = { agents: [], rules: [] };
+  for (const raw of txt.split("\n")) {
+    const line = raw.split("#")[0].trim();
+    if (!line) continue;
+    const ua = /^user-agent\s*:\s*(.+)$/i.exec(line);
+    if (ua) {
+      if (cur.agents.length && cur.rules.length) { groups.push(cur); cur = { agents: [], rules: [] }; }
+      cur.agents.push(ua[1].trim().toLowerCase());
+      continue;
+    }
+    const rule = /^(allow|disallow)\s*:\s*(.*)$/i.exec(line);
+    if (rule) cur.rules.push({ allow: rule[1].toLowerCase() === "allow", path: rule[2].trim() });
+  }
+  if (cur.agents.length) groups.push(cur);
+  const g = groups.find((x) => x.agents.includes("*")) ?? groups[0];
+  if (!g) return true;
+  let best = null;
+  for (const r of g.rules) {
+    if (!r.path) return true;
+    if (r.path === "/" && path.startsWith("/")) { if (!best || 1 >= best.len) best = { allow: r.allow, len: 1 }; continue; }
+    if (r.path !== "/" && path.startsWith(r.path)) { if (!best || r.path.length >= best.len) best = { allow: r.allow, len: r.path.length }; }
+  }
+  return best ? best.allow : true;
+}
+
+// --- Mirror of parseCsv() from lib/collector/csv.ts ---
+function parseCsvRows(text) {
+  const rows = [], rejected = [];
+  text.split("\n").forEach((raw, idx) => {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) return;
+    const cells = line.split(",").map((c) => c.trim());
+    if (idx === 0 && /store/i.test(cells[0] ?? "") && /url|link/i.test(cells[1] ?? "")) return;
+    const [store, url = "", priceRaw = ""] = cells;
+    if (!store) return rejected.push({ line: idx + 1 });
+    if (!/^https?:\/\//i.test(url)) return rejected.push({ line: idx + 1 });
+    const price = Number(String(priceRaw).replace(/[^0-9.]/g, ""));
+    if (!Number.isFinite(price) || price <= 0) return rejected.push({ line: idx + 1 });
+    rows.push({ store, url, price });
+  });
+  return { rows, rejected };
+}
+
+describe("collector: robots compliance (fail closed)", () => {
+  const ROBOTS = "User-agent: *\nAllow: /\nDisallow: /mobapi/\nDisallow: /fr/\n";
+  test("allows product pages, blocks disallowed prefixes", () => {
+    assert.ok(robotsAllowsPath(ROBOTS, "/apple-iphone-123.html"));
+    assert.ok(!robotsAllowsPath(ROBOTS, "/mobapi/items"));
+    assert.ok(!robotsAllowsPath(ROBOTS, "/fr/catalog"));
+  });
+  test("blanket disallow blocks everything", () => {
+    assert.ok(!robotsAllowsPath("User-agent: *\nDisallow: /\n", "/anything"));
+  });
+});
+
+describe("collector: CSV import only accepts clean lines", () => {
+  test("parses valid rows, skips header, rejects bad lines", () => {
+    const { rows, rejected } = parseCsvRows("storeName,url,price\nJumia,https://x.ma/p,5499\nBad,,0\nNoUrl,ftp://x,5");
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].price, 5499);
+    assert.equal(rejected.length, 2);
   });
 });

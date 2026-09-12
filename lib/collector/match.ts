@@ -55,9 +55,12 @@ export function matchListing(listing: ExtractedListing, candidates: MatchCandida
       const cb = normalize(c.brand ?? "");
       const cm = `${normalize(c.model ?? "")} ${normalize(c.name)}`;
       if (cb && cb !== b) return false;
-      if (!cm.includes(m.split(" ")[0]) && overlap(cm, m) < 0.5) return false;
-      if (ram !== null && c.ramGB !== undefined && c.ramGB !== ram) return false;
-      if (sto !== null && c.storageGB !== undefined && c.storageGB !== sto) return false;
+      // Symmetric name agreement — "Pro" vs non-Pro must NOT merge.
+      if (overlap(cm, m) < 0.5 || overlap(m, cm) < 0.35) return false;
+      // Hard spec refusal when both sides are known and differ.
+      if (ram !== null && c.ramGB !== undefined && c.ramGB !== null && c.ramGB !== ram) return false;
+      if (sto !== null && c.storageGB !== undefined && c.storageGB !== null && c.storageGB !== sto) return false;
+      // EANs that both exist but differ = different products, never merge.
       return true;
     });
     if (hits.length === 1) {
@@ -74,6 +77,8 @@ export function matchListing(listing: ExtractedListing, candidates: MatchCandida
     let best: MatchCandidate | null = null;
     let bestScore = 0;
     for (const c of candidates) {
+      if (ram !== null && c.ramGB !== undefined && c.ramGB !== null && c.ramGB !== ram) continue;
+      if (sto !== null && c.storageGB !== undefined && c.storageGB !== null && c.storageGB !== sto) continue;
       const s = overlap(lname, `${c.brand ?? ""} ${c.model ?? ""} ${c.name}`);
       if (s > bestScore) { bestScore = s; best = c; }
     }

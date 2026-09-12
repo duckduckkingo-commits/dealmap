@@ -6,6 +6,7 @@
 // A price is labeled Live ONLY when actually checked within LIVE_MINUTES.
 // New module: no existing file is modified.
 import { extractListing } from "./adapters";
+import { robotsAllows } from "./robots";
 import { historyFor } from "./store";
 import type { CollectorDB } from "./store";
 import type { CollectionRun, Offer } from "./types";
@@ -34,7 +35,7 @@ export async function tick(db: CollectorDB, limit = 20, deps: TickDeps = {}): Pr
   const nowIso = new Date(deps.now ? deps.now() : Date.now()).toISOString();
   const run: CollectionRun = {
     id: `run_${Date.now()}`, startedAt: nowIso, finishedAt: null,
-    status: "running", checked: 0, updated: 0, skipped: 0, failedSources: [], errors: [],
+    status: "running", checked: 0, updated: 0, skipped: 0, failedSources: [], errors: [], notes: [],
   };
   const due = db.offers
     .filter((o) => o.verificationStatus !== "rejected")
@@ -45,6 +46,12 @@ export async function tick(db: CollectorDB, limit = 20, deps: TickDeps = {}): Pr
     const store = db.stores.find((s) => s.id === offer.storeId);
     if (!store?.allowRecheck || !offer.sourceUrl) {
       run.skipped++;
+      continue;
+    }
+    const gate = deps.extract ? { ok: true, note: "Test fetcher." } : await robotsAllows(offer.sourceUrl);
+    if (!gate.ok) {
+      run.skipped++;
+      run.notes.push(`Skipped ${offer.storeName}: ${gate.note}`);
       continue;
     }
     run.checked++;

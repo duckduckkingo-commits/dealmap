@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "../ui-helpers";
 
 interface Health {
-  lastRun: { id: string; status: string; startedAt: string; checked: number; updated: number; skipped: number; errors: string[] } | null;
+  lastRun: { id: string; status: string; startedAt: string; checked: number; updated: number; skipped: number; errors: string[]; notes: string[] } | null;
   offers: number; products: number; stale: number; pendingSubmissions: number; verifiedOffers: number;
 }
 
@@ -12,6 +12,9 @@ export default function AdminCollector() {
   const [weights, setWeights] = useState<{ factors: { key: string; label: string; def: number }[]; weights: Record<string, number> } | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [csv, setCsv] = useState("storeName, url, price, currency, condition");
+  const [rights, setRights] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
 
   async function load() {
     const r = await fetch("/api/collector/runs");
@@ -28,6 +31,24 @@ export default function AdminCollector() {
     if (r.ok) toast("Collection run finished ✓");
     else toast("Run failed");
     setBusy(false); load();
+  }
+
+  async function toggleRecheck(id: string, on: boolean) {
+    await fetch("/api/collector/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "recheck", id, on }) });
+    toast(on ? "Auto re-check ON for this store" : "Auto re-check OFF");
+    load();
+  }
+
+  async function importCsv() {
+    if (!rights) { setImportMsg("Tick the rights confirmation first."); return; }
+    const r = await fetch("/api/collector/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv, rightsConfirmed: true }) });
+    const d = await r.json();
+    if (!r.ok) { setImportMsg(d.error || "Import failed."); return; }
+    setImportMsg(`Imported ${d.imported} offers ✓${d.rejected.length ? ` · ${d.rejected.length} lines rejected (see console)` : ""}`);
+    console.log("CSV rejected lines:", d.rejected);
+    toast(`Imported ${d.imported} offers ✓`);
+    setCsv("");
+    load();
   }
 
   async function review(id: string, action: "verify" | "reject") {
@@ -63,13 +84,32 @@ export default function AdminCollector() {
         {h.lastRun && h.lastRun.errors.length > 0 && (
           <div className="alert error"><b>Failed sources / errors:</b><ul style={{ margin: "6px 0 0", paddingInlineStart: 18 }}>{h.lastRun.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}</ul></div>
         )}
+        {h.lastRun && (h.lastRun.notes ?? []).length > 0 && (
+          <div className="alert"><b>Skipped (by rule):</b><ul style={{ margin: "6px 0 0", paddingInlineStart: 18 }}>{(h.lastRun.notes ?? []).slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}</ul></div>
+        )}
       </div>
 
       <div className="card" style={{ marginTop: 14 }}>
         <h2 style={{ marginTop: 0 }}>Data sources</h2>
         <div className="table-scroll"><table><thead><tr><th>Store</th><th>Homepage</th><th>Reliability</th><th>Auto re-check</th></tr></thead>
-          <tbody>{data.stores.map((s) => <tr key={s.id}><td>{s.name}</td><td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis" }}>{s.homepage}</td><td>{s.reliability === null ? "Unknown" : s.reliability}</td><td>{s.allowRecheck ? "ON" : "OFF"}</td></tr>)}</tbody></table></div>
-        <p style={{ color: "var(--muted)", fontSize: ".83rem" }}>Re-checking stays OFF by default (respects store terms). Prices are labeled Live only when checked within 60 minutes.</p>
+          <tbody>{data.stores.map((s) => (
+            <tr key={s.id}><td>{s.name}</td><td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{s.homepage}</td><td>{s.reliability === null ? "Unknown" : s.reliability}</td>
+              <td><button className="toggle" role="switch" aria-checked={s.allowRecheck} aria-label={`Auto re-check ${s.name}`} onClick={() => toggleRecheck(s.id, !s.allowRecheck)} /></td></tr>
+          ))}</tbody></table></div>
+        <p style={{ color: "var(--muted)", fontSize: ".83rem" }}>Re-checking stays OFF by default. Turning it ON re-fetches only that store's known offer URLs, and only where robots.txt allows — disallowed ones are logged as skipped.</p>
+      </div>
+
+      <div className="card" style={{ marginTop: 14 }}>
+        <h2 style={{ marginTop: 0 }}>Import real price list (CSV)</h2>
+        <p style={{ color: "var(--muted)" }}>One per line: <code>storeName, url, price, currency, condition</code>. Only data you have the right to use.</p>
+        <label htmlFor="csv">CSV lines</label>
+        <textarea id="csv" rows={4} value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={"Jumia MA, https://..., 5499, MAD, new"} />
+        <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 400 }}>
+          <input type="checkbox" checked={rights} onChange={(e) => setRights(e.target.checked)} style={{ width: "auto", minHeight: "auto" }} />
+          I confirm I may use this data
+        </label>
+        <div className="cta-row" style={{ marginTop: 8 }}><button className="btn" onClick={importCsv}>Import as pending offers</button></div>
+        {importMsg && <p className="alert" role="status">{importMsg}</p>}
       </div>
 
       <div className="card" style={{ marginTop: 14 }}>

@@ -101,7 +101,8 @@ create table if not exists data_collection_runs (
   updated int not null default 0,
   skipped int not null default 0,
   failed_sources jsonb not null default '[]',
-  errors jsonb not null default '[]'
+  errors jsonb not null default '[]',
+  notes jsonb not null default '[]'
 );
 
 create table if not exists deal_weights (

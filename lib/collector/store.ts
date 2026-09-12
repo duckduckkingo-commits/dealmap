@@ -96,7 +96,7 @@ export async function saveCollector(db: CollectorDB): Promise<void> {
   if (problems.length) {
     db.runs.unshift({
       id: `run_${Date.now()}`, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString(),
-      status: "partial", checked: 0, updated: 0, skipped: 0, failedSources: [], errors: problems,
+      status: "partial", checked: 0, updated: 0, skipped: 0, failedSources: [], errors: problems, notes: [],
     });
     await writeJson(db);
   }

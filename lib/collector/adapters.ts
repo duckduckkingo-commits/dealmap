@@ -10,8 +10,7 @@ import { detectProblems } from "./problems";
 import type { Availability, Condition, ExtractedListing, Store } from "./types";
 
 /** Blocks localhost / private ranges / cloud metadata (basic SSRF guard). */
-export function isBlockedHostname(hostname: string): boolean {
-  const h = hostname.trim().toLowerCase().replace(/\.$/, "");
+export function isBlockedHostname(hostname: string): boolean {  const h = hostname.trim().toLowerCase().replace(/\.$/, "");
   if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local") || h.endsWith(".internal")) return true;
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(h)) {
     const [a, b] = h.split(".").map(Number);
@@ -96,7 +95,7 @@ function pickOffer(offers: unknown): Record<string, unknown> | null {
 
 function detectCondition(text: string): { condition: Condition; raw: string | null; label: "Reported" | "Unknown" } {
   const checks: [RegExp, Condition][] = [
-    [/\breconditionné\b|\brefurbished\b|\brénové\b|\brenewed\b/i, "refurbished"],
+    [/\breconditionné\b|\brefurbished\b|\brénové\b|\brenewed\b|\bremis\s+à\s+neuf\b/i, "refurbished"],
     [/\boccasion\b|\bused\b|\bsecond[- ]?hand\b|\bmستعمل/i, "used"],
     [/\bneuf\b|\bnew\b|\bجديد/i, "new"],
   ];

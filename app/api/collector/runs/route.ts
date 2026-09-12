@@ -6,6 +6,7 @@ import { getSession, requireRole } from "@/lib/auth";
 import { tickSchema } from "@/lib/collector/schemas";
 import { health, tick } from "@/lib/collector/scheduler";
 import { readCollector, saveCollector } from "@/lib/collector/store";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: status === 401 ? "Login required." : "Forbidden — ADMIN or OWNER only." }, { status });
   }
   const body = await req.json().catch(() => ({}));
+  // Toggle automatic re-checking for one store (default OFF everywhere).
+  if (body.action === "recheck") {
+    const p = z.object({ action: z.literal("recheck"), id: z.string().min(1).max(80), on: z.boolean() }).safeParse(body);
+    if (!p.success) return NextResponse.json({ error: "Invalid recheck toggle." }, { status: 400 });
+    const db = await readCollector();
+    const store = db.stores.find((s) => s.id === p.data.id);
+    if (!store) return NextResponse.json({ error: "Store not found." }, { status: 404 });
+    store.allowRecheck = p.data.on;
+    await saveCollector(db);
+    await audit("COLLECTOR_RECHECK_TOGGLE", { result: p.data.on ? "on" : "off", target: p.data.id }).catch(() => undefined);
+    return NextResponse.json({ ok: true, id: store.id, allowRecheck: store.allowRecheck });
+  }
   const parsed = tickSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid tick request." }, { status: 400 });
   const db = await readCollector();
