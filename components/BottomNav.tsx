@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "Home", icon: "⌂", match: (p: string) => p === "/" },
   { href: "/explore", label: "Explore", icon: "◉", match: (p: string) => p.startsWith("/explore") || p.startsWith("/search") || p.startsWith("/product") },
+  { href: "/analyze", label: "Analyze", icon: "◈", match: (p: string) => p.startsWith("/analyze") },
   { href: "/compare", label: "Compare", icon: "⇄", match: (p: string) => p.startsWith("/compare") },
   { href: "/watchlist", label: "Saved", icon: "♡", match: (p: string) => p.startsWith("/watchlist") || p.startsWith("/alerts") },
   { href: "/profile", label: "Profile", icon: "○", match: (p: string) => p.startsWith("/profile") || p.startsWith("/settings") || p.startsWith("/purchases") || p.startsWith("/warranties") || p.startsWith("/dashboard") },

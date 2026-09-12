@@ -292,7 +292,7 @@ th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-
   padding-bottom: env(safe-area-inset-bottom);
 }
 [data-theme="dark"] .bottomnav { box-shadow: 0 -4px 28px -6px rgba(63,139,255,0.4); }
-.bottomnav-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 8px; }
+.bottomnav-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px 8px; }
 .bottomnav a {
   display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px;
   color: var(--muted); font-size: 0.68rem; font-weight: 700; border-radius: 12px; text-decoration: none !important;

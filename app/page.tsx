@@ -35,6 +35,9 @@ export default async function Home() {
         <div style={{ maxWidth: 620, marginBottom: 14 }}>
           <SearchBar placeholder={t(locale, "searchPlaceholder")} />
         </div>
+        <div className="cta-row" style={{ marginBottom: 12 }}>
+          <Link className="btn" href="/analyze">◈ Analyze a Product Link</Link>
+        </div>
         <div className="chips" role="navigation" aria-label="Categories">
           <Link className="chip active" href="/explore">All</Link>
           {CATS.map((c) => (

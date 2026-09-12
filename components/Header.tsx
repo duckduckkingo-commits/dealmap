@@ -16,6 +16,7 @@ export default function Header({ locale }: { locale: Locale }) {
         </Link>
         <nav className="links" aria-label="Primary">
           <Link href="/explore">{locale === "ar" ? "استكشف" : locale === "en" ? "Explore" : "Explorer"}</Link>
+          <Link href="/analyze">Analyze</Link>
           <Link href="/search">{t(locale, "search")}</Link>
           <Link href="/compare">{t(locale, "compare")}</Link>
           <Link href="/watchlist">{t(locale, "watchlist")}</Link>
