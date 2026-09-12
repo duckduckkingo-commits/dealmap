@@ -15,13 +15,14 @@ export interface AnalysisPayload {
     condition: { value: string | null; label: string };
     warrantyMonths: { value: number | null; label: string };
     availability: { value: string | null; label: string };
+    image: { value: string | null; label: string };
   };
   match: { method: string; confidence: number; productRef: string | null; productName: string | null; notes: string[] };
   market: { avg: number | null; low: number | null; high: number | null; count: number };
   history: { low: number; avg: number; high: number; count: number } | null;
   classicScore: { score: number; verdict: string } | null;
   smart: SmartScore;
-  alternatives: { id: string; storeName: string; price: number | null; sourceUrl: string; verificationStatus: string }[];
+  alternatives: { id: string; storeName: string; price: number | null; sourceUrl: string; verificationStatus: string; imageUrl: string | null }[];
 }
 
 function Cell({ k, v, label }: { k: string; v: string; label: string }) {
@@ -57,6 +58,11 @@ export default function AnalysisResult({ data }: { data: AnalysisPayload }) {
       <div className="grid cols2">
         <div className="card">
           <h2 style={{ marginTop: 0 }}>Product</h2>
+          {L.image.value && (
+            <img src={L.image.value} alt={`Photo of ${L.name.value ?? "analyzed product"} from the listing`}
+              style={{ width: "100%", maxHeight: 260, objectFit: "contain", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card-2)" }}
+              loading="lazy" referrerPolicy="no-referrer" />
+          )}
           <Cell k="Name" v={txt(L.name)} label={L.name.label} />
           <Cell k="Brand" v={txt(L.brand)} label={L.brand.label} />
           <Cell k="Model" v={txt(L.model)} label={L.model.label} />
@@ -87,9 +93,11 @@ export default function AnalysisResult({ data }: { data: AnalysisPayload }) {
       {data.alternatives.length > 0 && (
         <div className="card">
           <h2 style={{ marginTop: 0 }}>Better / alternative offers ({data.alternatives.length})</h2>
-          <div className="table-scroll"><table><thead><tr><th>Store</th><th>Price</th><th>Status</th><th></th></tr></thead>
+          <div className="table-scroll"><table><thead><tr><th></th><th>Store</th><th>Price</th><th>Status</th><th></th></tr></thead>
             <tbody>{data.alternatives.map((a) => (
-              <tr key={a.id}><td>{a.storeName}</td><td><b>{a.price !== null ? formatPrice(a.price) : "—"}</b></td><td>{a.verificationStatus}</td>
+              <tr key={a.id}>
+                <td>{a.imageUrl ? <img src={a.imageUrl} alt="" width={48} height={48} style={{ objectFit: "contain", borderRadius: 8 }} loading="lazy" referrerPolicy="no-referrer" /> : <span aria-hidden="true">🏷️</span>}</td>
+                <td>{a.storeName}</td><td><b>{a.price !== null ? formatPrice(a.price) : "—"}</b></td><td>{a.verificationStatus}</td>
                 <td><a className="btn secondary small" href={a.sourceUrl} target="_blank" rel="nofollow noopener">Open →</a></td></tr>
             ))}</tbody></table></div>
         </div>

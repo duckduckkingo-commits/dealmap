@@ -31,6 +31,7 @@ export interface Offer {
   storeName: string;
   source: string;
   sourceUrl: string;
+  imageUrl?: string | null;
   price: number | null;
   currency: string;
   availability: Availability;
@@ -102,6 +103,7 @@ export interface ExtractedListing {
   warrantyMonths: Labeled<number>;
   availability: Labeled<Availability>;
   storeName: Labeled<string>;
+  image: Labeled<string>;
   issues: DetectedIssue[];
   missing: string[];
   fetchedAt: string;

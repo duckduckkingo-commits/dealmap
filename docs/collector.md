@@ -43,6 +43,13 @@ wires (Header link, bottom-nav tab, nav grid columns, Home hero button).
   bypass, polite bot user-agent, 8s timeout.
 - Unreachable sources (HTTP 403, bot walls) stay listed with reliability
   Unknown and surface in run errors — never worked around.
+- **Photos**: product photo extracted per listing (`og:image` / JSON-LD,
+  relative URLs resolved) and shown on results, alternatives and admin.
+- **Currency honesty**: market/history comparison runs on MAD only; foreign
+  prices are shown but never scored against MAD averages.
+- **Current source map**: Jumia MA (live fetching) · Apple Store (reference,
+  INTL) · Marjane / Electroplanet / Samsung (bot-walled → CSV/submissions
+  only) · more retailers join as rows, never schema changes.
 
 ## Setup
 

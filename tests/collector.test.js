@@ -180,12 +180,38 @@ describe("collector: robots compliance (fail closed)", () => {
     assert.ok(!robotsAllowsPath("User-agent: *\nDisallow: /\n", "/anything"));
   });
 });
-
 describe("collector: CSV import only accepts clean lines", () => {
   test("parses valid rows, skips header, rejects bad lines", () => {
     const { rows, rejected } = parseCsvRows("storeName,url,price\nJumia,https://x.ma/p,5499\nBad,,0\nNoUrl,ftp://x,5");
     assert.equal(rows.length, 1);
     assert.equal(rows[0].price, 5499);
     assert.equal(rejected.length, 2);
+  });
+});
+
+describe("collector: photo + refurbished extraction from real-style HTML", () => {
+  const HTML = `<html><head><title>Apple iPhone 13 Pro 512GB - Remis à neuf</title>
+<meta property="og:title" content="iPhone 13 Pro 512GB" />
+<meta property="og:image" content="/img/iphone13pro.jpg" />
+<script type="application/ld+json">{"@type":"Product","name":"iPhone 13 Pro 512GB","brand":{"name":"Apple"},"image":"https://cdn.x.ma/big.jpg","offers":{"price":"6599","priceCurrency":"MAD"}}</script>
+</head><body><p>Remis à neuf, garantie 3 mois</p></body></html>`;
+  function meta(html, key) {
+    const m = new RegExp(`<meta[^>]+property=["']${key}["'][^>]+content=["']([^"']+)["']`, "i").exec(html);
+    return m ? m[1] : null;
+  }
+  function ld(html) {
+    const m = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i.exec(html);
+    return JSON.parse(m[1]);
+  }
+  test("JSON-LD image preferred, price + refurbished French detected", () => {
+    const p = ld(HTML);
+    const img = (Array.isArray(p.image) ? p.image[0] : p.image) || meta(HTML, "og:image");
+    assert.equal(img, "https://cdn.x.ma/big.jpg");
+    assert.equal(Number(p.offers.price), 6599);
+    assert.ok(/remis\s+à\s+neuf/i.test(HTML), "remis à neuf recognized as refurbished signal");
+  });
+  test("relative og:image resolves against page URL", () => {
+    const resolved = new URL(meta(HTML, "og:image"), "https://www.jumia.ma/p.html").toString();
+    assert.equal(resolved, "https://www.jumia.ma/img/iphone13pro.jpg");
   });
 });

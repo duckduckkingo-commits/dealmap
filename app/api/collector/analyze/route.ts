@@ -54,10 +54,12 @@ export async function POST(req: Request) {
   }
   const match = matchListing(listing, candidates);
 
-  // 3. Market evidence (existing engine, read-only).
+  // 3. Market evidence (existing engine, read-only). MAD-only: foreign
+  // currencies are never compared against MAD averages (would fabricate).
+  const madMarket = listing.currency === "MAD";
   let market: { avg: number | null; low: number | null; high: number | null; count: number } = { avg: null, low: null, high: null, count: 0 };
   let classicScore: { score: number; verdict: string } | null = null;
-  if (match.productRef) {
+  if (match.productRef && madMarket) {
     const obs = await observationsFor(match.productRef);
     const stats = marketStats(obs);
     market = { avg: stats.median, low: stats.min, high: stats.max, count: stats.count };
@@ -69,9 +71,9 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4. History evidence (collector ledger).
+  // 4. History evidence (collector ledger). MAD-only, same reason as above.
   const histKey = match.productRef ?? listing.url;
-  const hist = historyStats(historyFor(db, histKey));
+  const hist = madMarket ? historyStats(historyFor(db, histKey)) : null;
 
   // 5. Smart score (multi-factor, transparent).
   const storeRel = db.stores.find((s) => host.includes(s.homepage.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]))?.reliability ?? null;
@@ -108,6 +110,7 @@ export async function POST(req: Request) {
     warrantyMonths: listing.warrantyMonths.value,
     warrantyLabel: listing.warrantyMonths.label,
     returnPolicy: null,
+    imageUrl: listing.image.value ?? null,
     specs: {
       brand: listing.brand.value ?? undefined, model: listing.model.value ?? undefined,
       ramGB: listing.ramGB.value ?? undefined, storageGB: listing.storageGB.value ?? undefined,

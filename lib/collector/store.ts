@@ -31,7 +31,9 @@ async function readJson(): Promise<CollectorDB> {
     const raw = await fs.readFile(FILE, "utf8");
     const parsed = JSON.parse(raw) as Partial<CollectorDB>;
     const db = { ...EMPTY, ...parsed };
-    if (db.stores.length === 0) db.stores = seedStores();
+    // Merge in directory stores added after first seed (never duplicates, never drops).
+    const have = new Set(db.stores.map((s) => s.id));
+    for (const s of seedStores()) if (!have.has(s.id)) db.stores.push(s);
     return db;
   } catch {
     return { ...EMPTY, stores: seedStores() };
@@ -82,6 +84,7 @@ export function toRow(o: Offer): Record<string, unknown> {
     currency: o.currency, availability: o.availability, condition: o.condition,
     warranty_months: o.warrantyMonths, return_policy: o.returnPolicy,
     specs: o.specs, verification_status: o.verificationStatus,
+    image_url: o.imageUrl ?? null,
     last_checked: o.lastChecked, created_at: o.createdAt,
   };
 }

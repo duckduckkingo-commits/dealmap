@@ -8,7 +8,7 @@ interface Health {
 }
 
 export default function AdminCollector() {
-  const [data, setData] = useState<{ health: Health; runs: Health["lastRun"][]; stores: { id: string; name: string; homepage: string; reliability: number | null; allowRecheck: boolean }[]; submissions: { id: string; productName: string | null; storeName: string | null; price: number | null; url: string | null; createdAt: string }[] } | null>(null);
+  const [data, setData] = useState<{ health: Health; runs: Health["lastRun"][]; stores: { id: string; name: string; homepage: string; reliability: number | null; allowRecheck: boolean }[]; submissions: { id: string; productName: string | null; storeName: string | null; price: number | null; url: string | null; createdAt: string }[]; offers: { id: string; productName: string | null; storeName: string; price: number | null; currency: string; condition: string; verificationStatus: string; imageUrl: string | null; sourceUrl: string; lastChecked: string | null }[] } | null>(null);
   const [weights, setWeights] = useState<{ factors: { key: string; label: string; def: number }[]; weights: Record<string, number> } | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -119,6 +119,21 @@ export default function AdminCollector() {
             <tbody>{data.submissions.map((s) => (
               <tr key={s.id}><td>{s.productName ?? s.url ?? s.id}</td><td>{s.storeName ?? "—"}</td><td>{s.price ?? "—"}</td>
                 <td><button className="btn secondary small" onClick={() => review(s.id, "verify")}>Verify</button> <button className="btn ghost small" onClick={() => review(s.id, "reject")}>Reject</button></td></tr>
+            ))}</tbody></table></div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: 14 }}>
+        <h2 style={{ marginTop: 0 }}>Real offers ({data.offers.length})</h2>
+        {data.offers.length === 0 ? <p style={{ color: "var(--muted)" }}>No real offers yet — analyze a link, import a CSV, or run an update.</p> : (
+          <div className="table-scroll"><table><thead><tr><th></th><th>Product</th><th>Store</th><th>Price</th><th>Status</th><th>Checked</th></tr></thead>
+            <tbody>{data.offers.map((o) => (
+              <tr key={o.id}>
+                <td>{o.imageUrl ? <img src={o.imageUrl} alt="" width={44} height={44} style={{ objectFit: "contain", borderRadius: 8 }} loading="lazy" referrerPolicy="no-referrer" /> : <span aria-hidden="true">🏷️</span>}</td>
+                <td style={{ maxWidth: 220 }}>{o.productName ?? "—"}</td><td>{o.storeName}</td>
+                <td><b>{o.price !== null ? `${o.price} ${o.currency}` : "—"}</b></td>
+                <td><span className={`badge ${o.verificationStatus === "verified" ? "good" : "warn"}`}>{o.verificationStatus}</span></td>
+                <td style={{ fontSize: ".8rem", color: "var(--muted)" }}>{o.lastChecked ? new Date(o.lastChecked).toLocaleString() : "never"}</td></tr>
             ))}</tbody></table></div>
         )}
       </div>

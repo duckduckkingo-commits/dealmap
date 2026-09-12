@@ -25,11 +25,13 @@ export function isBlockedHostname(hostname: string): boolean {  const h = hostna
 /** Admin-curated directory: real retailer names + homepages. Prices are NEVER stored here. */
 export const STORE_DIRECTORY: Omit<Store, "reliability" | "allowRecheck">[] = [
   { id: "store_jumia_ma", name: "Jumia Morocco", homepage: "https://www.jumia.ma", country: "MA" },
-  { id: "store_marjanemall", name: "Marjane Mall", homepage: "https://www.marjanemall.ma", country: "MA" },
-  { id: "store_electroplanet", name: "Electroplanet", homepage: "https://www.electroplanet.ma", country: "MA" },
+  { id: "store_marjanemall", name: "Marjane Mall (bot-walled, CSV only)", homepage: "https://www.marjanemall.ma", country: "MA" },
+  { id: "store_electroplanet", name: "Electroplanet (bot-walled, CSV only)", homepage: "https://www.electroplanet.ma", country: "MA" },
   { id: "store_virgin_ma", name: "Virgin Megastore Morocco", homepage: "https://www.virginmegastore.ma", country: "MA" },
   { id: "store_amazon", name: "Amazon", homepage: "https://www.amazon.com", country: "INTL" },
   { id: "store_fnac", name: "Fnac", homepage: "https://www.fnac.com", country: "INTL" },
+  { id: "store_apple", name: "Apple Store", homepage: "https://www.apple.com", country: "INTL" },
+  { id: "store_samsung_ma", name: "Samsung Morocco (bot-walled, CSV only)", homepage: "https://shop.samsung.com/morocco", country: "MA" },
 ];
 
 const KNOWN_BRANDS = ["apple", "samsung", "xiaomi", "redmi", "poco", "huawei", "honor", "oppo", "vivo", "realme", "oneplus", "nothing", "google", "pixel", "sony", "lenovo", "hp", "dell", "asus", "acer", "msi", "nvidia", "canon", "nikon", "jbl", "anker", "tecno", "infinix"];
@@ -161,8 +163,13 @@ export async function fetchPage(url: string, timeoutMs = 8000): Promise<FetchRes
 
 /** Extracts a listing from ONE user-pasted URL. Missing data stays Unknown — never invented. */
 export async function extractListing(url: string): Promise<ExtractedListing> {
-  const missing: string[] = [];
   const { html, note } = await fetchPage(url);
+  return extractFromHtml(url, html, note);
+}
+
+/** Pure HTML → listing extraction (testable). Product photo from og:image / JSON-LD. */
+export function extractFromHtml(url: string, html: string, note: string): ExtractedListing {
+  const missing: string[] = [];
   const text = html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -202,6 +209,17 @@ export async function extractListing(url: string): Promise<ExtractedListing> {
   let host = "unknown source";
   try { host = new URL(url).hostname.replace(/^www\./, ""); } catch { /* keep default */ }
 
+  // Product photo: JSON-LD image first, then og:image. Relative URLs resolved.
+  const ldImageRaw = ld ? (Array.isArray(ld.image) ? ld.image[0] : ld.image) : null;
+  const ldImage = typeof ldImageRaw === "string" ? ldImageRaw : (ldImageRaw && typeof ldImageRaw === "object" ? (ldImageRaw as Record<string, unknown>).url : null);
+  const ogImage = meta(html, "og:image");
+  const imageRaw = (typeof ldImage === "string" && ldImage) || ogImage;
+  let image: string | null = null;
+  if (imageRaw) {
+    try { image = new URL(imageRaw, url).toString().slice(0, 1000); } catch { image = null; }
+    if (image && !/^https?:\/\//i.test(image)) image = null;
+  }
+
   const issues = detectProblems(text.slice(0, 60000));
   const field = <T,>(v: T | null, label: "Verified" | "Reported" | "Estimated", missingName?: string): Labeled<T> => {
     if (v === null || v === undefined || v === "") {
@@ -227,6 +245,7 @@ export async function extractListing(url: string): Promise<ExtractedListing> {
     warrantyMonths: field(warranty, "Reported", "warranty"),
     availability: availability === "unknown" ? (() => { missing.push("availability"); return unknown<Availability>(); })() : labeled(availability, "Reported"),
     storeName: labeled(host, "Reported"),
+    image: field(image, "Reported", "product photo"),
     issues,
     missing,
     fetchedAt: new Date().toISOString(),

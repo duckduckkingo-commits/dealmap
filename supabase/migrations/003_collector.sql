@@ -63,6 +63,7 @@ create table if not exists offers (
   warranty_months int null,
   return_policy text null,
   specs jsonb not null default '{}',
+  image_url text null,
   verification_status text not null default 'pending',
   last_checked timestamptz null,
   created_at timestamptz not null default now()

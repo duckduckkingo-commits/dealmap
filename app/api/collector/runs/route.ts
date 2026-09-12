@@ -21,6 +21,11 @@ export async function GET() {
     runs: db.runs.slice(0, 20),
     stores: db.stores,
     submissions: db.submissions.filter((x) => x.status === "pending").slice(0, 100),
+    offers: db.offers.slice(0, 50).map((o) => ({
+      id: o.id, productName: o.productName, storeName: o.storeName, price: o.price,
+      currency: o.currency, condition: o.condition, verificationStatus: o.verificationStatus,
+      imageUrl: o.imageUrl ?? null, sourceUrl: o.sourceUrl, lastChecked: o.lastChecked,
+    })),
   });
 }
 
