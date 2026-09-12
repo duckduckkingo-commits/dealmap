@@ -6,6 +6,8 @@ import PriceChart from "@/components/PriceChart";
 import { ScoreBadge, ScoreRing } from "@/components/ScoreBadge";
 import { catIcon } from "@/components/categoryIcons";
 import ProductActions from "@/components/ProductActions";
+import { readCollector } from "@/lib/collector/store";
+import { freshnessOf } from "@/lib/collector/scheduler";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -25,6 +27,9 @@ export default async function ProductPage({ params, searchParams }: { params: { 
   const asking = searchParams.price ? Number(searchParams.price) : (stats.median ?? 0);
   const deal = stats.median !== null && asking > 0 ? dealScoreEngine({ askingPrice: asking, observations: obs }) : null;
   const similar = all.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 3);
+  // Real collected offers for this exact product (photos included). When present,
+  // demo stats are hidden so only real data is seen.
+  const realOffers = (await readCollector()).offers.filter((o) => o.productRef === product.id && o.price !== null);
 
   return (
     <>
@@ -71,7 +76,14 @@ export default async function ProductPage({ params, searchParams }: { params: { 
         </div>
         <div className="card">
           <h2 style={{ marginTop: 0 }}>Market range</h2>
-          {stats.median === null ? <p style={{ color: "var(--muted)" }}>Not enough reliable data yet.</p> : (
+          {realOffers.length > 0 ? (
+            <>
+              <div className="kv"><span>Lowest real price</span><b>{formatPrice(Math.min(...realOffers.map((o) => o.price as number)))}</b></div>
+              <div className="kv"><span>Highest real price</span><b>{formatPrice(Math.max(...realOffers.map((o) => o.price as number)))}</b></div>
+              <div className="kv"><span>Real offers</span><b>{realOffers.length}</b></div>
+              <p style={{ color: "var(--muted)", fontSize: ".82rem" }}>From collected store offers below — demo stats hidden.</p>
+            </>
+          ) : stats.median === null ? <p style={{ color: "var(--muted)" }}>Not enough reliable data yet.</p> : (
             <>
               <div className="kv"><span>Reference (median)</span><b>{formatPrice(stats.median)}</b></div>
               <div className="kv"><span>Range</span><b>{formatPrice(stats.min)} – {formatPrice(stats.max)}</b></div>
@@ -81,7 +93,7 @@ export default async function ProductPage({ params, searchParams }: { params: { 
               <p style={{ color: "var(--muted)", fontSize: ".82rem" }}>Updated: {formatDate(stats.lastUpdated)} · {stats.confidenceNote}</p>
             </>
           )}
-          {product.isDemo && <p><span className="badge">DEVELOPMENT / DEMO DATA</span></p>}
+          {product.isDemo && realOffers.length === 0 && <p><span className="badge">DEVELOPMENT / DEMO DATA</span></p>}
           {Object.keys(product.specs ?? {}).length > 0 && (
             <>
               <h3 style={{ fontSize: ".9rem" }}>Specifications</h3>
@@ -90,6 +102,24 @@ export default async function ProductPage({ params, searchParams }: { params: { 
           )}
         </div>
       </div>
+
+      {realOffers.length > 0 && (
+        <div className="card" style={{ marginTop: 14 }}>
+          <div className="section-title" style={{ margin: "0 0 8px" }}><h2>Real offers with photos</h2><span className="badge good">REAL DATA</span></div>
+          <div className="grid cols3 stagger">
+            {realOffers.slice(0, 6).map((o) => (
+              <article className="card hoverable" key={o.id} style={{ padding: 12, textAlign: "center" }}>
+                {o.imageUrl
+                  ? <img src={o.imageUrl} alt={`Photo of ${o.productName ?? product.name} at ${o.storeName}`} style={{ width: "100%", height: 130, objectFit: "contain", borderRadius: 10 }} loading="lazy" referrerPolicy="no-referrer" />
+                  : <div style={{ fontSize: "2.4rem" }} aria-hidden="true">🏷️</div>}
+                <p style={{ fontWeight: 800, fontSize: "1.1rem", margin: "8px 0 2px" }}>{o.price !== null ? formatPrice(o.price, o.currency) : "—"}</p>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: ".83rem" }}>{o.storeName} · {freshnessOf(o.lastChecked).state}</p>
+                <p style={{ margin: "6px 0 0" }}><span className={`badge ${o.verificationStatus === "verified" ? "good" : "warn"}`}>{o.verificationStatus}</span> <a className="btn secondary small" href={o.sourceUrl} target="_blank" rel="nofollow noopener">Open →</a></p>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginTop: 14 }}>
         <div className="section-title" style={{ margin: "0 0 8px" }}><h2>Price history</h2><span className="badge info">{series.length} points</span></div>
