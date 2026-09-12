@@ -18,15 +18,18 @@ export const STALE_HOURS = 24;
 const POLITE_MS = 3000;
 const JUMIA_ORIGIN = "https://www.jumia.ma";
 
-export interface DealQuery { storeId: string; storeName: string; kind: StoreKind; q: string; category: string; }
+export interface DealQuery { storeId: string; storeName: string; kind: StoreKind; q: string; category: string; exclude?: RegExp; }
+
+/** Accessories pollute device queries — excluded by name (still real, just off-category). */
+const ACCESSORIES = /coque|pochette|housse|étui|etui|cover\b|verre\s*trempé|film\s*écran|protecteur|chargeur|câble|cable|adaptateur|support|écouteurs\s*filaires|kit\s*piéton/i;
 
 export const QUERIES: DealQuery[] = [
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "iphone 13", category: "smartphones" },
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "galaxy a54", category: "smartphones" },
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "redmi note 13", category: "smartphones" },
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "thinkpad", category: "laptops" },
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "macbook air m2", category: "laptops" },
-  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "playstation 5", category: "gaming-consoles" },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "iphone 13", category: "smartphones", exclude: ACCESSORIES },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "galaxy a54", category: "smartphones", exclude: ACCESSORIES },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "redmi note 13", category: "smartphones", exclude: ACCESSORIES },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "thinkpad", category: "laptops", exclude: ACCESSORIES },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "macbook air m2", category: "laptops", exclude: ACCESSORIES },
+  { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "playstation 5", category: "gaming-consoles", exclude: ACCESSORIES },
   { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "sony wh-1000xm5", category: "headphones" },
   { storeId: "store_jumia_ma", storeName: "Jumia Morocco", kind: "jumia", q: "ipad", category: "tablets" },
   { storeId: "store_techspace", storeName: "Techspace", kind: "techspace", q: "iphone", category: "smartphones" },
@@ -115,8 +118,9 @@ async function stepJumiaSearch(db: CollectorDB, queue: QueueState, q: string): P
   const { html, note } = await fetchPage(searchUrl);
   if (!html) { res.errors.push(`Search unreachable for "${q}" (${note})`); return res; }
   const entry = QUERIES.find((x) => x.kind === "jumia" && x.q === q);
-  for (const card of parseSearchCards(html, JUMIA_ORIGIN, 8)) {
+  for (const card of parseSearchCards(html, JUMIA_ORIGIN, 14)) {
     if (db.offers.some((o) => o.sourceUrl === card.url)) continue;
+    if (entry?.exclude && card.name && entry.exclude.test(card.name)) continue;
     const offer = baseOffer({
       storeId: "store_jumia_ma", storeName: "Jumia Morocco", source: "jumia-catalog",
       sourceUrl: card.url, productName: card.name, price: card.price, currency: card.currency,
