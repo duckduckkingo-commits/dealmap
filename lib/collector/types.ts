@@ -3,7 +3,7 @@ import type { InfoLabel, Labeled } from "./labels";
 
 export type Availability = "in_stock" | "out_of_stock" | "preorder" | "unknown";
 export type Condition = "new" | "used" | "refurbished" | "unknown";
-export type VerificationStatus = "pending" | "verified" | "rejected";
+export type VerificationStatus = "pending" | "verified" | "rejected" | "expired";
 export type MatchMethod = "ean" | "model_number" | "brand_model_specs" | "fuzzy" | "none";
 
 export interface StoreSpec {
@@ -34,6 +34,13 @@ export interface Offer {
   imageUrl?: string | null;
   price: number | null;
   currency: string;
+  oldPrice?: number | null;
+  discountPct?: number | null;
+  ratingValue?: number | null;
+  reviewsCount?: number | null;
+  seller?: string | null;
+  location?: string | null;
+  imageOk?: boolean;
   availability: Availability;
   availabilityLabel: InfoLabel;
   condition: Condition;
@@ -41,6 +48,8 @@ export interface Offer {
   warrantyMonths: number | null;
   warrantyLabel: InfoLabel;
   returnPolicy: string | null;
+  returnPolicyLabel?: InfoLabel;
+  category?: string | null;
   specs: StoreSpec;
   verificationStatus: VerificationStatus;
   lastChecked: string | null;

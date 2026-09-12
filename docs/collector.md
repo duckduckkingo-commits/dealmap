@@ -47,9 +47,22 @@ wires (Header link, bottom-nav tab, nav grid columns, Home hero button).
   relative URLs resolved) and shown on results, alternatives and admin.
 - **Currency honesty**: market/history comparison runs on MAD only; foreign
   prices are shown but never scored against MAD averages.
-- **Current source map**: Jumia MA (live fetching) · Apple Store (reference,
-  INTL) · Marjane / Electroplanet / Samsung (bot-walled → CSV/submissions
-  only) · more retailers join as rows, never schema changes.
+## Real deals feed (Jumia MA)
+
+- **Parsers** (`lib/collector/jumia.ts`): real search cards (`article.prd`,
+  `a.core` exact links, `div.prc/old/bdg`, lazy `data-src` photos, `data-gtm-*`
+  attributes) + product pages (JSON-LD, seller, location, ratings, warranty).
+  Visible MAD prices win over foreign-currency data attributes.
+- **Engine** (`lib/collector/deals.ts`): 10 curated queries, polite
+  (~1 req/3s), one work unit per call (serverless-safe), image HEAD
+  verification, robots gate, expiry on dead links.
+- **24h refresh**: `GET /api/collector/deals` and `/deals` self-pump when the
+  last success is older than 24h; admin “Run update now”; any external cron
+  pinging the endpoint works too.
+- **Display**: only live in-stock offers with verified photo + exact link.
+  Otherwise “No verified offers available.” — never demo data.
+- **REAL_ONLY** (`lib/products.ts`, default ON): `DEALMAP_REAL_ONLY=false`
+  restores the demo catalog. Public route `/deals` with real cards.
 
 ## Setup
 

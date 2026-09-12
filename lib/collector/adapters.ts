@@ -51,7 +51,7 @@ function meta(html: string, key: string): string | null {
   return null;
 }
 
-function jsonLdProducts(html: string): Record<string, unknown>[] {
+export function jsonLdProducts(html: string): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = [];
   const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let m: RegExpExecArray | null;
@@ -108,7 +108,7 @@ function detectCondition(text: string): { condition: Condition; raw: string | nu
   return { condition: "unknown", raw: null, label: "Unknown" };
 }
 
-function detectWarranty(text: string): number | null {
+export function detectWarranty(text: string): number | null {
   const m = /garantie\s*(?:de\s*)?(\d{1,2})\s*(mois|months?|ans?|years?)/i.exec(text)
     || /(\d{1,2})\s*(month|year)s?\s*warranty/i.exec(text)
     || /ضمان\s*(\d{1,2})\s*(شهر|سنة|أشهر|سنوات)/.exec(text);

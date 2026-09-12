@@ -64,6 +64,13 @@ create table if not exists offers (
   return_policy text null,
   specs jsonb not null default '{}',
   image_url text null,
+  image_ok boolean not null default false,
+  old_price numeric null,
+  discount_pct int null,
+  rating_value numeric null,
+  reviews_count int null,
+  seller text null,
+  location text null,
   verification_status text not null default 'pending',
   last_checked timestamptz null,
   created_at timestamptz not null default now()

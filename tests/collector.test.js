@@ -189,8 +189,7 @@ describe("collector: CSV import only accepts clean lines", () => {
   });
 });
 
-describe("collector: photo + refurbished extraction from real-style HTML", () => {
-  const HTML = `<html><head><title>Apple iPhone 13 Pro 512GB - Remis à neuf</title>
+describe("collector: photo + refurbished extraction from real-style HTML", () => {  const HTML = `<html><head><title>Apple iPhone 13 Pro 512GB - Remis à neuf</title>
 <meta property="og:title" content="iPhone 13 Pro 512GB" />
 <meta property="og:image" content="/img/iphone13pro.jpg" />
 <script type="application/ld+json">{"@type":"Product","name":"iPhone 13 Pro 512GB","brand":{"name":"Apple"},"image":"https://cdn.x.ma/big.jpg","offers":{"price":"6599","priceCurrency":"MAD"}}</script>
@@ -213,5 +212,54 @@ describe("collector: photo + refurbished extraction from real-style HTML", () =>
   test("relative og:image resolves against page URL", () => {
     const resolved = new URL(meta(HTML, "og:image"), "https://www.jumia.ma/p.html").toString();
     assert.equal(resolved, "https://www.jumia.ma/img/iphone13pro.jpg");
+  });
+});
+
+describe("collector: jumia search cards (real observed markup)", () => {
+  const CARD = `<article class="prd _fb col c-prd"><a href="/generic-coque-xyz-123.html" class="core" data-gtm-name="Coque Test" data-gtm-price="4.52" data-gtm-brand="Generic" data-gtm-category="Phones &amp; Tablets/Cases" data-moengage-product_image="https://ma.jumia.is/img/1.jpg?1"></a>`
+    + `<a href="/generic-coque-xyz-123.html"><img data-src="https://ma.jumia.is/img/1.jpg?1" src="data:image/svg+xml,x" class="img" alt="Coque Test" /></a>`
+    + `<div class="prc">49.00 Dhs</div><div class="old">79.00 Dhs</div><div class="bdg">38%</div></article>`;
+  function parseCard(block) {
+    const href = /class="core"[^>]*href="([^"]+)"/i.exec(block)?.[1] ?? /href="([^"]+)"[^>]*class="core"/i.exec(block)?.[1];
+    if (!href || !/\.html/i.test(href)) return null;
+    const num = (s) => { const n = Number(String(s || "").replace(/[^0-9.]/g, "")); return Number.isFinite(n) && n > 0 ? n : null; };
+    const price = num(/<div class="prc"[^>]*>([^<]{1,40})</i.exec(block)?.[1]);
+    if (price === null) return null;
+    const old = num(/<div class="old"[^>]*>([^<]{1,40})</i.exec(block)?.[1]);
+    const img = /data-moengage-product_image="(https?:\/\/[^"]+)"/i.exec(block)?.[1]
+      ?? /<img[^>]+data-src="(https?:\/\/[^"]+)"/i.exec(block)?.[1] ?? null;
+    const disc = old && old > price ? Math.round(((old - price) / old) * 100) : null;
+    return { href, price, old, disc, img };
+  }
+  test("extracts exact link, MAD price, old price, image", () => {
+    const c = parseCard(CARD);
+    assert.ok(c.href.endsWith(".html"));
+    assert.equal(c.price, 49);
+    assert.equal(c.old, 79);
+    assert.equal(c.disc, 38);
+    assert.ok(c.img.startsWith("https://"));
+  });
+  test("visible MAD price wins over foreign-currency data attrs", () => {
+    const c = parseCard(CARD);
+    assert.equal(c.price, 49, "must read 49.00 Dhs, not data-gtm-price 4.52");
+  });
+  test("cards without price or link are dropped", () => {
+    assert.equal(parseCard(`<article class="prd"><a class="core" href="/x.html">x</a></article>`), null);
+    assert.equal(parseCard(`<article class="prd"><div class="prc">49.00 Dhs</div></article>`), null);
+  });
+});
+
+describe("collector: display rules (real-only)", () => {
+  function displayable(o) {
+    return o.price !== null && /^https?:\/\//i.test(o.sourceUrl) && o.imageOk === true && !!o.imageUrl
+      && o.verificationStatus !== "expired" && o.verificationStatus !== "rejected" && o.availability !== "out_of_stock";
+  }
+  test("only complete live offers display", () => {
+    const good = { price: 10, sourceUrl: "https://x.ma/p.html", imageOk: true, imageUrl: "https://x/1.jpg", verificationStatus: "pending", availability: "in_stock" };
+    assert.ok(displayable(good));
+    assert.ok(!displayable({ ...good, price: null }));
+    assert.ok(!displayable({ ...good, imageOk: false }));
+    assert.ok(!displayable({ ...good, verificationStatus: "expired" }));
+    assert.ok(!displayable({ ...good, availability: "out_of_stock" }));
   });
 });

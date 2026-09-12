@@ -8,9 +8,17 @@ export interface ProductWithMarket extends Product {
   isDemo: boolean;
 }
 
+/** REAL_ONLY mode: demo seed catalog is excluded everywhere, so only real
+ * collected data is ever seen. ON by default; set DEALMAP_REAL_ONLY=false
+ * only if you explicitly want the demo catalog back. */
+export function realOnly(): boolean {
+  return process.env.DEALMAP_REAL_ONLY !== "false";
+}
+
 export async function allProducts(): Promise<ProductWithMarket[]> {
   const db = await readDB();
   const byId = new Map<string, ProductWithMarket>();
+  if (!realOnly()) {
   for (const p of (catalog as unknown as { products: { id: string; brand: string; model: string; name: string; category: string; specs: Record<string, string> }[] }).products) {
     byId.set(p.id, {
       id: p.id, brandId: "b_" + p.brand.toLowerCase(), brand: p.brand, model: p.model,
@@ -19,12 +27,13 @@ export async function allProducts(): Promise<ProductWithMarket[]> {
       median: null, count: 0, min: null, max: null, isDemo: true,
     });
   }
+  }
   for (const p of db.products) {
     byId.set(p.id, { ...p, median: null, count: 0, min: null, max: null, isDemo: false });
   }
   const obsByProduct = new Map<string, number[]>();
   const demoFlag = new Map<string, boolean>();
-  const seedObs = (catalog as { observations: { productId: string; prices: number[] }[] }).observations;
+  const seedObs = realOnly() ? [] : (catalog as { observations: { productId: string; prices: number[] }[] }).observations;
   for (const g of seedObs) {
     if (!obsByProduct.has(g.productId)) obsByProduct.set(g.productId, []);
     obsByProduct.get(g.productId)!.push(...g.prices);
@@ -62,7 +71,7 @@ export async function searchProducts(q: string, filters: { category?: string; ma
 export async function observationsFor(productId: string): Promise<PriceObservation[]> {
   const db = await readDB();
   const out: PriceObservation[] = [];
-  const seed = (catalog as { observations: { productId: string; prices: number[]; condition: string; location: string }[] }).observations.find((g) => g.productId === productId);
+  const seed = realOnly() ? undefined : (catalog as { observations: { productId: string; prices: number[]; condition: string; location: string }[] }).observations.find((g) => g.productId === productId);
   if (seed) {
     seed.prices.forEach((price, i) => {
       const d = new Date(Date.now() - (seed.prices.length - i) * 6 * 86400000);
