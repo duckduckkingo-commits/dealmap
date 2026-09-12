@@ -31,6 +31,8 @@ export const STORE_DIRECTORY: Omit<Store, "reliability" | "allowRecheck">[] = [
   { id: "store_amazon", name: "Amazon", homepage: "https://www.amazon.com", country: "INTL" },
   { id: "store_fnac", name: "Fnac", homepage: "https://www.fnac.com", country: "INTL" },
   { id: "store_apple", name: "Apple Store", homepage: "https://www.apple.com", country: "INTL" },
+  { id: "store_techspace", name: "Techspace (official store JSON)", homepage: "https://www.techspace.ma", country: "MA" },
+  { id: "store_mytech", name: "Mytech (official store API)", homepage: "https://mytech.ma", country: "MA" },
   { id: "store_samsung_ma", name: "Samsung Morocco (bot-walled, CSV only)", homepage: "https://shop.samsung.com/morocco", country: "MA" },
 ];
 

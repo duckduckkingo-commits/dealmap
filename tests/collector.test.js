@@ -249,8 +249,7 @@ describe("collector: jumia search cards (real observed markup)", () => {
   });
 });
 
-describe("collector: display rules (real-only)", () => {
-  function displayable(o) {
+describe("collector: display rules (real-only)", () => {  function displayable(o) {
     return o.price !== null && /^https?:\/\//i.test(o.sourceUrl) && o.imageOk === true && !!o.imageUrl
       && o.verificationStatus !== "expired" && o.verificationStatus !== "rejected" && o.availability !== "out_of_stock";
   }
@@ -261,5 +260,35 @@ describe("collector: display rules (real-only)", () => {
     assert.ok(!displayable({ ...good, imageOk: false }));
     assert.ok(!displayable({ ...good, verificationStatus: "expired" }));
     assert.ok(!displayable({ ...good, availability: "out_of_stock" }));
+  });
+});
+
+describe("collector: multi-store official JSON (techspace/mytech mirrors)", () => {
+  function centimesToMad(v) {
+    const n = typeof v === "number" ? v : Number(v);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round((n / 100) * 100) / 100;
+  }
+  function wcMoney(v) {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  test("shopify centimes convert to MAD", () => {
+    assert.equal(centimesToMad(929000), 9290);
+    assert.equal(centimesToMad("2049000"), 20490);
+    assert.equal(centimesToMad(0), null);
+    assert.equal(centimesToMad(-5), null);
+  });
+  test("woocommerce MAD prices pass through, junk rejected", () => {
+    assert.equal(wcMoney("2249"), 2249);
+    assert.equal(wcMoney(""), null);
+    assert.equal(wcMoney("free"), null);
+  });
+  test("discount only when old price is higher", () => {
+    const disc = (p, o) => (o && o > p ? Math.round(((o - p) / o) * 100) : null);
+    assert.equal(disc(9290, 9299), 0);
+    assert.equal(disc(49, 99), 51);
+    assert.equal(disc(100, 100), null);
+    assert.equal(disc(100, null), null);
   });
 });

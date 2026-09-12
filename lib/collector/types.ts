@@ -9,6 +9,8 @@ export type MatchMethod = "ean" | "model_number" | "brand_model_specs" | "fuzzy"
 export interface StoreSpec {
   brand?: string; model?: string; ramGB?: number; storageGB?: number;
   ean?: string; modelNumber?: string;
+  /** Remote store reference (Techspace handle, Mytech product id). */
+  remoteId?: string;
 }
 
 export interface Store {
@@ -119,9 +121,11 @@ export interface ExtractedListing {
   fetchNote: string;
 }
 
+export type StoreKind = "jumia" | "techspace" | "mytech";
+
 export interface QueueState {
-  searches: string[];
-  details: { url: string; q: string }[];
+  searches: { storeId: string; q: string }[];
+  details: { url: string; q: string; kind: StoreKind; ref?: string; storeId?: string }[];
 }
 
 export interface MatchCandidate {
