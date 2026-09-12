@@ -12,7 +12,7 @@ import { matchListing } from "./match";
 import { robotsAllows } from "./robots";
 import { readCollector, saveCollector, type CollectorDB } from "./store";
 import { allProducts } from "../products";
-import type { MatchCandidate, Offer } from "./types";
+import type { MatchCandidate, Offer, QueueState } from "./types";
 
 export const STALE_HOURS = 24;
 const POLITE_MS = 3000;
@@ -33,11 +33,10 @@ export const QUERIES: DealQuery[] = [
   { q: "apple watch", category: "smartwatches" },
 ];
 
-export interface QueueState { searches: string[]; details: { url: string; q: string }[]; }
-
-export function queueOf(db: CollectorDB & { queue?: QueueState }): QueueState {
+export function queueOf(db: CollectorDB): QueueState {
   if (db.queue && (db.queue.searches.length || db.queue.details.length)) return db.queue;
-  return { searches: QUERIES.map((x) => x.q), details: [] };
+  db.queue = { searches: QUERIES.map((x) => x.q), details: [] };
+  return db.queue;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -71,7 +70,7 @@ async function candidates(): Promise<MatchCandidate[]> {
 export interface StepResult { did: string; collected: number; enriched: number; expired: number; errors: string[]; }
 
 /** One polite unit: a search page OR up to 2 product details. Returns quickly. */
-export async function stepCollect(db: CollectorDB & { queue?: QueueState }): Promise<StepResult> {
+export async function stepCollect(db: CollectorDB): Promise<StepResult> {
   const res: StepResult = { did: "idle", collected: 0, enriched: 0, expired: 0, errors: [] };
   const queue = queueOf(db);
   const now = new Date().toISOString();
@@ -212,6 +211,8 @@ export function lastSuccess(db: CollectorDB): string | null {
 }
 
 export function needsRefresh(db: CollectorDB, hours = STALE_HOURS): boolean {
+  // Initial fill: work remains queued → keep pumping on every visit.
+  if (db.queue && (db.queue.searches.length > 0 || db.queue.details.length > 0)) return true;
   const last = lastSuccess(db);
   if (!last) return true;
   return Date.now() - +new Date(last) > hours * 3600000;

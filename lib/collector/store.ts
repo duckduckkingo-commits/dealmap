@@ -6,7 +6,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { STORE_DIRECTORY } from "./adapters";
 import { isPg, pgSelect, pgUpsert } from "./pg";
-import type { CollectionRun, Offer, PricePoint, Store, UserSubmission } from "./types";
+import type { CollectionRun, Offer, PricePoint, QueueState, Store, UserSubmission } from "./types";
 
 export interface CollectorDB {
   stores: Store[];
@@ -15,6 +15,7 @@ export interface CollectorDB {
   runs: CollectionRun[];
   submissions: UserSubmission[];
   weights: Record<string, number>;
+  queue: QueueState;
 }
 
 const FILE = path.join(process.cwd(), "data", "collector.json");
@@ -23,7 +24,7 @@ function seedStores(): Store[] {
   return STORE_DIRECTORY.map((s) => ({ ...s, reliability: null, allowRecheck: false }));
 }
 
-const EMPTY: CollectorDB = { stores: [], offers: [], history: [], runs: [], submissions: [], weights: {} };
+const EMPTY: CollectorDB = { stores: [], offers: [], history: [], runs: [], submissions: [], weights: {}, queue: { searches: [], details: [] } };
 
 async function readJson(): Promise<CollectorDB> {
   try {
@@ -31,6 +32,8 @@ async function readJson(): Promise<CollectorDB> {
     const raw = await fs.readFile(FILE, "utf8");
     const parsed = JSON.parse(raw) as Partial<CollectorDB>;
     const db = { ...EMPTY, ...parsed };
+    if (!db.queue || !Array.isArray(db.queue.searches)) db.queue = { searches: [], details: [] };
+    if (!Array.isArray(db.queue.details)) db.queue.details = [];
     // Merge in directory stores added after first seed (never duplicates, never drops).
     const have = new Set(db.stores.map((s) => s.id));
     for (const s of seedStores()) if (!have.has(s.id)) db.stores.push(s);
@@ -66,6 +69,7 @@ export async function readCollector(): Promise<CollectorDB> {
     runs: runs ?? json.runs,
     submissions: submissions ?? json.submissions,
     weights: json.weights,
+    queue: json.queue,
   };
 }
 

@@ -119,6 +119,11 @@ export interface ExtractedListing {
   fetchNote: string;
 }
 
+export interface QueueState {
+  searches: string[];
+  details: { url: string; q: string }[];
+}
+
 export interface MatchCandidate {
   ref: string;
   name: string;
