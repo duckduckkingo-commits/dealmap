@@ -308,7 +308,10 @@ export async function stepCollect(db: CollectorDB): Promise<StepResult> {
   return res;
 }
 
-/** Public feed: only live, verified, in-stock offers with photo + link. */
+/** Public feed: only live, IN-STOCK offers with photo + exact link.
+ *  Unknown availability never displays (detail check pending), expired,
+ *  rejected and out-of-stock never display. Empty feed renders
+ *  "No verified offers available." — never demo data. */
 export function displayable(db: CollectorDB): Offer[] {
   return db.offers.filter((o) =>
     o.price !== null
@@ -317,7 +320,7 @@ export function displayable(db: CollectorDB): Offer[] {
     && !!o.imageUrl
     && o.verificationStatus !== "expired"
     && o.verificationStatus !== "rejected"
-    && o.availability !== "out_of_stock"
+    && o.availability === "in_stock"
   );
 }
 

@@ -1,5 +1,6 @@
 // DEALMAP Collector — CSV import for real price lists the admin has rights to.
-// Format per line: storeName, url, price, currency?, condition?
+// Format per line: storeName, url, price, currency?, condition?, availability?
+// (availability: in_stock / out_of_stock, default unknown → hidden until verified).
 // Delimiter: comma or semicolon. Lines starting with # are ignored.
 // Invalid lines are reported, never silently stored.
 // New module: no existing file is modified.
@@ -11,6 +12,7 @@ export interface CsvRow {
   price: number;
   currency: string;
   condition: string;
+  availability: string;
 }
 
 export interface CsvResult {
@@ -43,12 +45,14 @@ export function parseCsv(text: string): CsvResult {
     const cells = split(line);
     // Skip a header row.
     if (idx === 0 && /store/i.test(cells[0] ?? "") && /url|link/i.test(cells[1] ?? "")) return;
-    const [storeName = "", url = "", priceRaw = "", currency = "MAD", condition = ""] = cells;
+    const [storeName = "", url = "", priceRaw = "", currency = "MAD", condition = "", availability = ""] = cells;
     if (!storeName) return rejected.push({ line: lineNo, reason: "Missing store name." });
     if (!/^https?:\/\//i.test(url)) return rejected.push({ line: lineNo, reason: "URL must start with http(s)://" });
     const price = Number(String(priceRaw).replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(price) || price <= 0) return rejected.push({ line: lineNo, reason: "Price must be a positive number." });
-    rows.push({ line: lineNo, storeName: storeName.slice(0, 120), url: url.slice(0, 2000), price, currency: (currency || "MAD").slice(0, 8).toUpperCase(), condition: condition.slice(0, 40) });
+    const avail = availability.trim().toLowerCase().replace(/[\s_]+/g, "_");
+    const availabilityOut = avail === "in_stock" || avail === "out_of_stock" ? avail : "";
+    rows.push({ line: lineNo, storeName: storeName.slice(0, 120), url: url.slice(0, 2000), price, currency: (currency || "MAD").slice(0, 8).toUpperCase(), condition: condition.slice(0, 40), availability: availabilityOut });
   });
   return { rows, rejected };
 }

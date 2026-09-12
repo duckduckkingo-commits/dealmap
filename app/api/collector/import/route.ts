@@ -27,6 +27,7 @@ export async function POST(req: Request) {
   const db = await readCollector();
   const now = new Date().toISOString();
   for (const row of rows.slice(0, 200)) {
+    const inStock = row.availability === "in_stock";
     db.offers.unshift({
       id: `off_csv_${Date.now().toString(36)}_${row.line}`,
       productRef: null,
@@ -37,8 +38,8 @@ export async function POST(req: Request) {
       sourceUrl: row.url,
       price: row.price,
       currency: row.currency,
-      availability: "unknown",
-      availabilityLabel: "Unknown",
+      availability: inStock ? "in_stock" : row.availability === "out_of_stock" ? "out_of_stock" : "unknown",
+      availabilityLabel: row.availability ? "Reported" : "Unknown",
       condition: row.condition ? (row.condition as "new" | "used" | "refurbished") : "unknown",
       conditionLabel: row.condition ? "Reported" : "Unknown",
       warrantyMonths: null,

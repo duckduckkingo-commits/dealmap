@@ -164,7 +164,9 @@ function parseCsvRows(text) {
     if (!/^https?:\/\//i.test(url)) return rejected.push({ line: idx + 1 });
     const price = Number(String(priceRaw).replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(price) || price <= 0) return rejected.push({ line: idx + 1 });
-    rows.push({ store, url, price });
+    const availRaw = (cells[5] || "").trim().toLowerCase().replace(/[\s_]+/g, "_");
+    const avail = availRaw === "in_stock" || availRaw === "out_of_stock" ? availRaw : "";
+    rows.push({ store, url, price, availability: avail });
   });
   return { rows, rejected };
 }
@@ -186,6 +188,12 @@ describe("collector: CSV import only accepts clean lines", () => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0].price, 5499);
     assert.equal(rejected.length, 2);
+  });
+  test("availability column passes through only when explicit", () => {
+    const { rows } = parseCsvRows("Jumia,https://x.ma/a,100,MAD,new,in_stock\nJumia,https://x.ma/b,100\nJumia,https://x.ma/c,100,MAD,new,bogus");
+    assert.equal(rows[0].availability, "in_stock");
+    assert.equal(rows[1].availability, "");
+    assert.equal(rows[2].availability, "");
   });
 });
 
@@ -251,7 +259,7 @@ describe("collector: jumia search cards (real observed markup)", () => {
 
 describe("collector: display rules (real-only)", () => {  function displayable(o) {
     return o.price !== null && /^https?:\/\//i.test(o.sourceUrl) && o.imageOk === true && !!o.imageUrl
-      && o.verificationStatus !== "expired" && o.verificationStatus !== "rejected" && o.availability !== "out_of_stock";
+      && o.verificationStatus !== "expired" && o.verificationStatus !== "rejected" && o.availability === "in_stock";
   }
   test("only complete live offers display", () => {
     const good = { price: 10, sourceUrl: "https://x.ma/p.html", imageOk: true, imageUrl: "https://x/1.jpg", verificationStatus: "pending", availability: "in_stock" };
@@ -260,6 +268,7 @@ describe("collector: display rules (real-only)", () => {  function displayable(o
     assert.ok(!displayable({ ...good, imageOk: false }));
     assert.ok(!displayable({ ...good, verificationStatus: "expired" }));
     assert.ok(!displayable({ ...good, availability: "out_of_stock" }));
+    assert.ok(!displayable({ ...good, availability: "unknown" }), "unknown stock stays hidden until detail-checked");
   });
 });
 

@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { rateLimit, clientKey } from "@/lib/rateLimit";
 import { submissionReviewSchema, submissionSchema } from "@/lib/collector/schemas";
 import { readCollector, saveCollector } from "@/lib/collector/store";
+import { extractListing, isBlockedHostname } from "@/lib/collector/adapters";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -22,7 +23,42 @@ export async function POST(req: Request) {
     const db = await readCollector();
     const item = db.submissions.find((s) => s.id === parsed.data.id);
     if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-    item.status = parsed.data.action === "verify" ? "verified" : "rejected";
+    if (parsed.data.action === "reject") {
+      item.status = "rejected";
+      await saveCollector(db);
+      await audit("COLLECTOR_SUBMISSION_REVIEW", { result: "rejected" }).catch(() => undefined);
+      return NextResponse.json({ ok: true, status: item.status });
+    }
+    // Verify = live re-check of the link before it counts. Dead link,
+    // missing price, or private host → rejected with the reason.
+    if (item.url) {
+      try {
+        const host = new URL(item.url).hostname;
+        if (isBlockedHostname(host)) {
+          item.status = "rejected";
+          await saveCollector(db);
+          return NextResponse.json({ ok: true, status: "rejected", reason: "Link host not allowed." });
+        }
+      } catch {
+        item.status = "rejected";
+        await saveCollector(db);
+        return NextResponse.json({ ok: true, status: "rejected", reason: "Bad link." });
+      }
+      const live = await extractListing(item.url);
+      if (live.price.value === null) {
+        item.status = "rejected";
+        await saveCollector(db);
+        await audit("COLLECTOR_SUBMISSION_REVIEW", { result: "rejected:no-price" }).catch(() => undefined);
+        return NextResponse.json({ ok: true, status: "rejected", reason: "No verifiable price on the page." });
+      }
+      item.status = "verified";
+      item.price = live.price.value;
+      if (live.name.value) item.productName = live.name.value;
+      await saveCollector(db);
+      await audit("COLLECTOR_SUBMISSION_REVIEW", { result: "verified" }).catch(() => undefined);
+      return NextResponse.json({ ok: true, status: "verified", price: live.price.value });
+    }
+    item.status = "verified";
     await saveCollector(db);
     await audit("COLLECTOR_SUBMISSION_REVIEW", { result: item.status }).catch(() => undefined);
     return NextResponse.json({ ok: true, status: item.status });
