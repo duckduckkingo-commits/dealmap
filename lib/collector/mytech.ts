@@ -20,6 +20,15 @@ export interface MytechHit {
 export const MYTECH_ORIGIN = "https://mytech.ma";
 const UA = { "User-Agent": "Mozilla/5.0 (compatible; DEALMAP-link-analysis)" };
 
+function cleanName(s: unknown): string | null {
+  if (typeof s !== "string") return null;
+  const t = s.replace(/<[^>]+>/g, "")
+    .replace(/&quot;|&#34;|&#8243;|&Prime;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&").trim();
+  return t || null;
+}
+
 function wcMoney(v: unknown): number | null {
   // WooCommerce Store API: price strings in major units when minor_unit=0 (MAD here).
   const n = Number(v);
@@ -45,7 +54,7 @@ function toHit(p: WcProduct): MytechHit | null {
   return {
     url: p.permalink,
     remoteId: p.id,
-    name: typeof p.name === "string" ? p.name.replace(/<[^>]+>/g, "").trim() || null : null,
+    name: cleanName(p.name),
     price,
     oldPrice: regular !== null && regular > price ? regular : null,
     image: p.images?.[0]?.src ?? null,

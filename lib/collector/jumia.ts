@@ -45,7 +45,18 @@ export function toAbsolute(href: string, base: string): string | null {
 
 function attr(block: string, name: string): string | null {
   const m = new RegExp(`${name}="([^"]{1,300})"`, "i").exec(block);
-  return m ? m[1].replace(/&amp;/g, "&").trim() || null : null;
+  return m ? decodeHtml(m[1]).trim().slice(0, 300) || null : null;
+}
+
+/** Decode HTML entities so names display correctly (13&quot; → 13"). */
+export function decodeHtml(s: string): string {
+  return s
+    .replace(/&quot;|&#34;|&#8243;|&Prime;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
 }
 
 function money(text: string | null): { price: number | null; currency: string } {
