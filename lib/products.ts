@@ -10,9 +10,12 @@ export interface ProductWithMarket extends Product {
 
 /** REAL_ONLY mode: demo seed catalog is excluded everywhere, so only real
  * collected data is ever seen. ON by default; set DEALMAP_REAL_ONLY=false
- * only if you explicitly want the demo catalog back. */
+ * only if you explicitly want the demo catalog back.
+ * NOTE: computed key access — Next.js inlines direct process.env.X at build
+ * time, which would freeze this switch. This lookup stays runtime-evaluated. */
 export function realOnly(): boolean {
-  return process.env.DEALMAP_REAL_ONLY !== "false";
+  const v = process.env["DEALMAP_" + "REAL_ONLY"];
+  return v !== "false";
 }
 
 export async function allProducts(): Promise<ProductWithMarket[]> {
